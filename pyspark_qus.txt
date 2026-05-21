@@ -1,0 +1,158 @@
+1. The "Data Skew & Salting" Challenge
+Scenario: You are joining a massive Transactions table with a Users table. The data is skewed because a few "guest" users have millions of transactions, while most have only one. Your join is hanging.
+
+Task: Write a PySpark snippet to implement Salting to fix the skew.
+
+Python
+from pyspark.sql import functions as F
+import random
+
+# 1. Add a salt column to the skewed (large) table
+# We create a random number between 0 and 9
+df_large = transactions_df.withColumn("salt", F.concat(F.col("user_id"), F.lit("_"), F.expr("floor(rand() * 10)")))
+
+# 2. Explode the small table to match the salt range
+# We must create 10 rows for every 1 user row so the keys can match
+salt_df = spark.range(10).withColumnRenamed("id", "salt_val")
+df_small = users_df.crossJoin(salt_df) \
+    .withColumn("salted_user_id", F.concat(F.col("user_id"), F.lit("_"), F.col("salt_val")))
+
+# 3. Perform the join on the salted keys
+result = df_large.join(df_small, df_large.salt == df_small.salted_user_id, "inner")
+
+
+2. The "Incremental Processing" (Deduplication) Challenge
+Scenario: You have a landing zone where you receive daily files. These files contain updates to existing records. You need to keep only the latest version of each record based on a timestamp and id.
+
+Task: Write a code to deduplicate a DataFrame to keep the latest record.
+
+Python
+from pyspark.sql.window import Window
+from pyspark.sql import functions as F
+
+# 1. Define a Window partitioned by the Unique ID, ordered by Time
+window_spec = Window.partitionBy("customer_id").orderBy(F.col("updated_at").desc())
+
+# 2. Rank the records and filter for the top one
+deduplicated_df = raw_df.withColumn("rank", F.row_number().over(window_spec)) \
+    .filter(F.col("rank") == 1) \
+    .drop("rank")
+	
+	
+	
+3. The "Explode and Flatten" Challenge
+Scenario: You are dealing with a complex JSON schema where a column orders is an Array of Objects. You need to flatten this into a tabular format to calculate the total revenue per product.
+
+Task: Explode the nested array and select sub-fields.
+
+Python
+# Assuming 'orders' is an array of structs: [{prod_id: 1, price: 100}, {prod_id: 2, price: 50}]
+from pyspark.sql import functions as F
+
+flattened_df = complex_df.withColumn("order_detail", F.explode("orders")) \
+    .select(
+        "customer_id",
+        F.col("order_detail.prod_id").alias("product_id"),
+        F.col("order_detail.price").alias("unit_price")
+    )
+	
+	
+4. The "Handling Small Files" (Coalesce vs Repartition)
+Scenario: After a heavy filtering operation, your DataFrame has 1,000 partitions, but only 10MB of total data. If you write this to S3, it will create 1,000 tiny files.
+
+Task: How do you reduce partitions efficiently before writing?
+
+The Answer: Use coalesce() instead of repartition().
+
+Why? coalesce avoids a full shuffle; it just merges existing partitions. repartition forces a full shuffle which is expensive.
+
+Python
+# Efficiently reducing partitions for writing
+df.coalesce(1).write.format("parquet").save("/mnt/data/output")
+5. The "Cumulative Sum" (Window Functions)
+Scenario: You need to calculate the running total (cumulative sum) of sales per day for each store.
+
+Task: Use a Window function to calculate a running total.
+
+Python
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Define window: Partition by store, order by date
+# Note: No 'rowsBetween' means it calculates from start of partition to current row
+window_running = Window.partitionBy("store_id").orderBy("sale_date")
+
+df_with_running_total = sales_df.withColumn(
+    "cumulative_sales", 
+    F.sum("amount").over(window_running)
+)
+
+Q: Why Delta Lake?
+ACID transactions
+Time travel
+Schema enforcement
+Faster queries (file compaction)
+Q: What is OPTIMIZE + ZORDER?
+OPTIMIZE → compaction
+ZORDER → data skipping improvement
+
+Data Modeling
+Q: What modeling did you use?
+Star schema
+Fact & Dimension tables
+Slowly changing dimensions
+
+CI/CD (GitHub)
+Q: How do you implement CI/CD?
+
+Answer:
+
+Git branching strategy (feature → dev → main)
+PR approvals
+Pipeline deployment using GitHub Actions / Azure DevOps
+Parameterized pipelines
+
+🔺 Add:
+Real-time pipeline explanation (step-by-step)
+Error handling strategy
+Monitoring (alerts, logging)
+
+What challenges did you face?
+
+Answer:
+
+Large data volume → solved via partitioning
+Slow queries → optimized joins, caching
+Pipeline failures → retry + logging
+
+
+11. How do you optimize Spark jobs?
+
+Answer:
+
+Broadcast joins
+Repartition
+Cache
+Avoid shuffles
+12. What is shuffle?
+
+Answer:
+
+Data movement across nodes → costly
+13. Broadcast join vs shuffle join?
+
+Answer:
+
+Broadcast → small table replicated
+Shuffle → both tables shuffled
+14. What is partitioning?
+
+Answer:
+
+Dividing data for parallel processing
+15. What is skewed data? How to handle?
+
+Answer:
+
+Uneven distribution
+Use salting / repartition

@@ -1,0 +1,59 @@
+Handling Errors (The "Mode" Option)
+The mode option tells Spark what to do when it hits a row that doesn't match your schema.
+PERMISSIVE (Default): Sets all fields to null for the corrupt row and puts the bad data into a special column (see below).
+DROPMALFORMED: Ignores the bad rows entirely. They won't appear in your DataFrame.
+FAILFAST: Stops the job immediately and throws an error if it finds any bad data.
+
+Tracking Bad Data (columnNameOfCorruptRecord)
+If you use PERMISSIVE mode, Spark can store the raw, broken string of the bad row so you can debug it later. To use this, 
+you must define a schema that includes this specific column name.
+python
+
+# The schema must include the 'bad_data' column as a StringType
+df = spark.read \
+    .schema(my_schema) \
+    .option("mode", "PERMISSIVE") \
+    .option("columnNameOfCorruptRecord", "bad_data") \
+    .csv("path/to/file.csv")
+--------------------------------------------
+df = (spark.read
+  .format("csv")
+  .option("header", "true")               # Use first row as names
+  .option("sep", "|")                     # Pipe separated
+  .option("inferSchema", "true")          # Auto-detect types
+  .option("nullValue", "MISSING")         # Treat 'MISSING' as null
+  .option("mode", "PERMISSIVE")           # Don't crash on bad rows
+  .load("dbfs:/mnt/data/my_file.csv"))
+  
+ --------------------
+ 
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DoubleType
+
+# 1. Define your manual schema
+# CRITICAL: You MUST include the corrupt record column as a StringType
+my_schema = StructType([
+    StructField("ID", IntegerType(), True),
+    StructField("Product", StringType(), True),
+    StructField("Price", DoubleType(), True),
+    StructField("_corrupt_record", StringType(), True) # Special column
+])
+
+# 2. Read the file with the specific option
+df = (spark.read
+  .format("csv")
+  .option("header", "true")
+  .schema(my_schema) # Apply your manual schema
+  .option("mode", "PERMISSIVE") # Required for corrupt record handling
+  .option("columnNameOfCorruptRecord", "_corrupt_record") # Match your schema column
+  .load("/path/to/your/file.csv"))
+
+# 3. Cache the results
+# Caching is recommended when working with corrupt records to avoid re-parsing
+df.cache()
+
+# 4. View only the bad records
+display(df.filter(df._corrupt_record.isNotNull()))
+-------------------------------------------------
+Delta table in pyspark
+
+

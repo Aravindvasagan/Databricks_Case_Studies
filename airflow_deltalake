@@ -1,0 +1,185 @@
+Core componented of airflow:
+---------------------------
+1. metadata ( store all the metadata information about the dags workflow. for instance, dag runs, shedule, status)
+Common DBs:  PostgreSQL, MySQL : “Metadata DB stores all state and execution details of Airflow.”
+2. dag file processor : dag folder will creae and dag file processor will go to your dag folders and will parses it and store the serialized dag into the db.
+*parses the dag file and extracts the DAG structrue and stores the serialized dag metadata in the airflow database:
+serialized dag : convert particular python code into json like representation:
+3. api server : api is the middel man for every task to db (aifrlow frontend to db all are api call)
+4. sheduler:  what and when the task need to be execute- .create the dag runs
+5. executor: will deceid how and where need to be execute the taks (like a dag what next kind of information)
+6. works: where the dag is process it actualy execute the task (its a real layer of execution)
+7. queue: Order of execution
+8. triggerer: assistance of worker
+DAG → Scheduler → Executor → Workers → api → Metadata DB
+                ↓
+              Web UI
+			  
+Airflow architecture:
+Core concept:
+dag-> directed acyclic graph
+task instance: just  run a singleunit of work 
+operator ; what type of taks like python ,sql, (categori of task)
+its the pre-define template 
+
+install
+task manager- versulization enabled
+windows feature - enabled -> vertutal mechine platform, windows subsystam for linux
+docker disktop download - Choose AMD64 (Most Likely) 
+cmd  check-> wsl --list -v , wsl --install ubuntu
+vs code installed and add conf,logs,dags, plugins folder with docker-compose.yaml file
+
+decorater python?*
+
+how dag are synced?
+
+---------------------
+from airflow.sdk import dag, task
+
+@dag( dag_id="first_dag")
+def first_dag():
+    @task.python    
+    def print_hello():
+        print("Hello from airflow-tutorial!")
+    @task.python
+    def print_goodbye():
+        print("Goodbye from airflow-tutorial!")
+    
+    @task.python
+    def print_greeting(greeting: str):
+        print(greeting) 
+
+
+    #define tasks dependencies
+    first_dag = print_hello()
+    second_dag = print_goodbye()
+    third_dag = print_greeting("Hello, Airflow!")
+    #print_hello >> print_greeting("Hello, Airflow!") >> print_goodbye()
+
+    #define the order of execution of the tasks
+    first_dag >> third_dag >> second_dag
+
+#instantiate the DAG (register  the dag)
+first_dag = first_dag()
+_____________________----------------------------------------
+
+
+In my project, we ingest data from on-prem Teradata using Azure Data Factory with Self-hosted Integration Runtime for secure connectivity. 
+The data is landed in ADLS Bronze layer as raw data. Databricks processes this data into Silver and Gold layers using Delta Lake. 
+Airflow is used as an orchestration layer to manage dependencies and trigger ADF and Databricks jobs. CI/CD is handled using Azure DevOps with ARM templates for deployment. 
+The final data is consumed by Power BI for reporting and also used in downstream applications like RAG-based systems
+
+
+06:09 Data Warehouse VS Data Lake VS Delta Lake
+here need to learn 5V's and Data Warehouse  support only 3 v's 
+
+Extensive experience with Lakehouse, Data Warehouse, OneLake, Pipelines, Notebooks, and Power BI.
+Proficiency in PySpark, SQL (T-SQL, Spark SQL), and Delta Lake.
+Hands-on experience with ETL/ELT design patterns, incremental data loads, and SCD Type 2 implementations.
+Experience in data modeling.
+Strong problem-solving skills with a focus on performance tuning and capacity optimization.
+Familiarity with the Azure ecosystem, including Data Lake Storage and Key Vault.
+Experience with GitHub practices, including CI/CD, Git branching, and automated testing.
+Excellent communication skills for effective collaboration with business stakeholders and technical teams.
+
+
+
+• Strong expertise in Databricks and Spark (PySpark preferred)
+• Proficiency in Python
+• Experience with Delta Lake, data partitioning, and performance tuning
+• Strong understanding of SQL
+• Solid understanding of distributed computing concepts
+• Experience in cloud data ecosystems on either:
+o Azure: ADF, Databricks, ADLS, Synapse
+o AWS: Glue, EMR, Lambda, S3, Redshift
+• Knowledge of CI/CD tools (Azure DevOps, GitHub Actions, or AWS Code Pipeline)
+
+ Design, implement and maintain existing and future data platforms like data warehouses, data lakes, data lakehouse etc. for structured and unstructured data
+ Familiarity with CI/CD pipelines, Infrastructure as Code (IaC) tools like Terraform and Tekton, and other automation frameworks.
+
+
+06:09 Data Warehouse VS Data Lake VS Delta Lake
+16:15 Delta Lake Architecture -> Delta Lake is not hold any data its kind of logical layer
+25:33 Databricks Free Edition
+27:43 Databricks Overview
+33:14 Ch-1 Delta Lake Tables
+1:01:50 Ch-2 Delta Log
+1:15:17 Ch-3 Delta Lake Schema Evolution
+1:27:00 Ch-4 DML and Merge with Deletion Vectors
+1:51:52 Ch-5 Delta Log Level Schema Changes
+2:02:34 Ch-6 Table Utility Commands
+2:34:54 Ch-7 Change Data Feed
+2:43:08 Ch-8 UniForm in Delta Lake
+2:52:47 Ch-9 Delta Lake Optimization
+
+Delta lake version 4.0 -> open table format -> dalta lake can be easyly connect to apache iceburg, apache hudi	
+Delta lake advandatge
+* ACID Transation, 
+* Schema enforcement & evalution
+* time travel
+* unified batch + streaming
+* data linage and audit
+
+Data lake drabacks -> stores all unstructed , semi, structured-> eg:parqute,csv
+data lakes have limitations
+* No acid transactions ( data can become corrupt if two jobs write at once)
+* Hard to handle schema changes
+* No easy way to track changes or roll back to an earlier version
+
+data lakehouse:-> azure adls, aws s3 bucket, gcp  gcs all are datalake with in that create  delta format
+data always in data lake and every data will reside in the data lake itself and we will add the data warehousing capability on top of data lake.
+thats will become lakehouse.
+
+Delta lake/ Delta Format: -> its a logical layer  and its not a storage solution -> its open source framwork
+its nothing but adding Delta log file. its have all the transactions in parqute file in data lake eg:lik add new row,del,update-> this way can add acid properties, enable data versioning and keep track of everything
+
+Delta table:
+underling data the form of delta
+
+4. What is Lakehouse architecture?
+
+Answer:
+
+Combines Data Lake + Warehouse
+Supports structured + unstructured
+Uses Delta Lake for ACID
+5. Why Delta Lake?
+
+Answer:
+
+ACID transactions
+Time travel
+Schema enforcement
+Faster reads
+
+6. What is Delta transaction log?
+
+Answer:
+
+_delta_log folder
+Stores metadata + history
+Ensures consistency
+7. What happens if a write fails in Delta?
+
+Answer:
+
+No partial data
+Atomic operation
+Rollback via transaction log
+8. What is OPTIMIZE and ZORDER?
+
+Answer:
+
+OPTIMIZE → compaction
+ZORDER → improves query pruning
+
+
+
+
+
+
+
+
+
+
+

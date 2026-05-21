@@ -1,0 +1,285 @@
+SECTION 7: CODING QUESTIONS (91–100)
+91. Reverse string (no slicing)
+def reverse(s):
+    res = ""
+    for c in s:
+        res = c + res
+    return res
+92. Find duplicates
+def duplicates(arr):
+    seen = set()
+    dup = set()
+    for x in arr:
+        if x in seen:
+            dup.add(x)
+        seen.add(x)
+    return list(dup)
+93. Check palindrome
+
+alist= 'malayalam'
+lt =alist[::-1]
+print(lt)
+
+if alist == lt:
+    print(f'{alist} "is palanrom"')
+else:
+    print(alist ,' : is not palanrom')
+#-==-----------------------------
+st=''
+for f in alist:
+    st = f+st
+print(st)
+94. Flatten nested list
+Flattening a nested list depends on how deep the nesting goes
+nested_list = [[10, 20], [30, 40], [50]]
+st = [ j for i in nested_list for j in i]
+print(st)->[10, 20, 30, 40, 50, 60] 
+---
+st = [10, 20, 30, 40, 50, 60] # Note: Works best with even numbers
+it = iter(st)
+nested = list(zip(it, it))
+
+print(nested) # Output: [(10, 20), (30, 40), (50, 60)]
+# (If you need lists instead of tuples: [list(x) for x in zip(it, it)])
+------
+def flatten(lst):
+    res = []
+    for i in lst:
+        if isinstance(i, list):
+            res.extend(flatten(i))
+        else:
+            res.append(i)
+    return res
+95. Count frequency :Counter([1,2,2,3])
+from collections import Counter
+-------------------------------
+input = [1,2,2,3,3,3,4,4,5,6,6]
+wnat to create into dict in python
+output= {1:1 , 2:2,3:3 ,4:2,5:1,6:2}
+Count frequency i need diffent way of code to solve this
+
+from collections import Counter
+
+input_list = [1, 2, 2, 3, 3, 3, 4, 4, 5, 6, 6]
+output = dict(Counter(input_list))
+
+print(output) # {1: 1, 2: 2, 3: 3, 4: 2, 5: 1, 6: 2}
+-------------------
+input_list = [1, 2, 2, 3, 3, 3, 4, 4, 5, 6, 6]
+output = {}
+
+for num in input_list:
+    # Get current count, default to 0 if not found, then add 1
+    output[num] = output.get(num, 0) + 1
+
+print(output)
+-------------------
+96. Largest element
+max(arr)
+97. Remove duplicates
+list(set(arr))
+98. Merge two dicts
+d = {**d1, **d2}
+99. Anagram check
+sorted(a) == sorted(b)
+100. First non-repeating char
+from collections import Counter
+
+def first_unique(s):
+    count = Counter(s)
+    for c in s:
+        if count[c] == 1:
+            return c
+			
+			
+	---------------------------------		
+dicnary details;
+delete
+del data["age"]
+data.pop("city") -> it will retun			
+-----
+dict Loop
+
+for key, value in data.items():
+    print(key, value)
+	
+NESTED DICTIONARY?
+employee = {
+    "emp1": {"name": "A", "salary": 1000},
+    "emp2": {"name": "B", "salary": 2000},
+    "emp3": {"name": "anu","name": "vasu", "salary": 2000}
+}
+
+for emp_id, details in employee.items():
+    for key, value in details.items():
+        print(emp_id, key, value)
+	
+o/p
+emp1 name A
+emp1 salary 1000
+emp2 name B
+emp2 salary 2000
+emp3 name vasu
+emp3 salary 2000	
+	
+if condition
+
+for emp_id, details in employee.items():
+    if details["salary"] > 1500:
+        print(emp_id, "High salary")
+    else:
+        print(emp_id, "Low salary")
+-------------
+# avoiding KeyError 
+print(employee["emp3"]["name"]  )
+print(employee.get("emp5", {}).get("name", "Not Found"))
+PERFECT INTERVIEW ANSWER
+
+“The get() method is used to safely retrieve values from a dictionary without raising a KeyError. 
+It allows specifying a default value when the key is missing, making it very useful for counting, aggregation, and dynamic dictionary operations.
+	-----------------------------------------
+input data = {
+    "emp1": {"salary": 1000},
+    "emp2": {"salary": 2000},
+    "emp3": {"salary": 3000}
+}
+o/p {
+    "low": ["emp1"],
+    "medium": ["emp2"],
+    "high": ["emp3"]
+}
+qyery
+
+result = {"low": [], "medium": [], "high": []}
+for emp, details in data.items():
+    sal = details["salary"]
+
+    if sal < 1500:
+        result["low"].append(emp)
+    elif sal < 2500:
+        result["medium"].append(emp)
+    else:
+        result["high"].append(emp)
+
+print(result)
+	-----------------------------------------
+Flatten nested dictionary
+data = {
+    "emp1": {"name": "A", "salary": 1000}
+}
+o/p {"emp1_name": "A", "emp1_salary": 1000}
+
+query
+result = {}
+
+for emp, details in data.items():
+    for key, value in details.items():
+        result[f"{emp}_{key}"] = value
+
+print(result)
+	-----------------------------------------
+findmax salary
+max_emp = None
+max_sal = 0
+
+for emp, details in data.items():
+    if details["salary"] > max_sal:
+        max_sal = details["salary"]
+        max_emp = emp
+
+print(max_emp, max_sal)
+-------------------------------------------------------
+Update salary by 10%
+for emp in data:
+    data[emp]["salary"] *= 1.1
+-------------------------------------------------------
+Convert nested dict → list
+i/p data = {
+    "emp1": {"name": "A"},
+    "emp2": {"name": "B"}
+}
+o/p [{"id": "emp1", "name": "A"}, {"id": "emp2", "name": "B"}]
+result = []
+
+for emp, details in data.items():
+    temp = {"id": emp}
+    temp.update(details)
+    result.append(temp)
+
+print(result)
+-------------------------------------------------------
+NESTED UPDATE USING FUNCTION
+def update_salary(data, percent):
+    for emp in data:
+        data[emp]["salary"] *= (1 + percent/100)
+    return data
+-------------------------------------------------------
+API response (JSON)
+data = {
+    "users": [
+        {"id": 1, "info": {"name": "A", "city": "Chennai"}},
+        {"id": 2, "info": {"name": "B", "city": "Delhi"}}
+    ]
+}
+
+Extract all names
+for user in data["users"]:
+    print(user["info"]["name"])
+-------------------------------------------------------
+
+* sum two number find wich number got mapped using hashmap
+Two Sum → hashmap lookup
+
+Use hashmap to store value → index
+-------------
+def two_sum(nums, target):
+    m = {}   # hashmap
+
+    for i, n in enumerate(nums):
+        diff = target - n
+
+        if diff in m:
+            return [m[diff], i]
+
+        m[n] = i	
+		
+nums = [2, 7, 3,11, 15]
+target = 10
+
+o/p -> [1,3]
+---------------------------------------------------------------------
+	
+	
+	| Keyword    | Purpose                     |
+| ---------- | --------------------------- |
+| try/except | Handle existing errors      |
+| raise      | Create/throw an error       |
+| assert     | Check condition (debugging) |
+🔹 Simple Flow Example
+def withdraw(balance, amount):
+    try:
+        if amount > balance:
+            raise ValueError("Insufficient balance")
+        
+        assert amount > 0, "Amount must be positive"
+        
+        return balance - amount
+
+    except ValueError as e:
+        print("Error:", e)
+\🔹 Easy Analogy
+try = Try doing work
+except = Handle failure
+raise = Throw error intentionally
+assert = Check if something is correct
+
+🔹 One-line Interview Answer
+
+👉
+try/except handles exceptions, raise is used to manually throw exceptions, and assert is used to validate conditions during debugging.
+	
+	
+	
+	
+	
+	

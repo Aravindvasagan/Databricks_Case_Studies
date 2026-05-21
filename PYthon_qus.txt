@@ -1,0 +1,399 @@
+DECORATORS_DEEP
+GENERATOR_DEEP
+MULTITHREADING_DEEP
+constructor
+1.What is Python memory management?
+Python uses private heap memory managed by the interpreter with reference counting + garbage collection.
+
+2. What is GIL?
+Global Interpreter Lock ensures only one thread executes Python bytecode at a time.
+
+3. Difference between deep copy and shallow copy?
+Shallow: copies references , fast
+Deep: copies actual objects
+
+4. What are mutable vs immutable objects?
+Mutable: list, dict,set
+Immutable: tuple, 
+
+5. What is __init__ vs __new__?
+__new__: creates object
+__init__: initializes object
+
+6. What are Python decorators?
+Functions that wrap another function to modify behavior.
+
+7. What is a closure?
+A function that remembers outer scope variables.
+
+8. What is a generator?
+Function using yield to produce values lazily.
+Step 1: Function NOT executed immediately
+Step 2: Returns generator object
+Step 3: Executes step-by-step on demand
+👉 List → huge memory
+👉 Generator → one value at a time
+
+9. List vs Tuple difference?
+List: mutable
+Tuple: immutable, faster
+
+10. What is duck typing?
+“If it behaves like a duck, it’s a duck” — type is based on behavior.
+
+11. What is *args and **kwargs?
+*args: positional
+**kwargs: keyword arguments
+
+12. What is lambda function?
+Anonymous one-line function., it must return the value, run time execution
+
+13. What is list comprehension?
+Compact way to create lists.
+
+14. What is Python bytecode?
+
+Intermediate code executed by Python VM.
+
+15. What is namespace?
+
+Mapping of names to objects.
+
+16. What is scope?
+
+Where variables are accessible (LEGB rule).
+
+17. What is is vs ==?
+is: memory reference
+==: value comparison
+18. What are iterators?
+
+Objects implementing __iter__() and __next__().
+
+19. What is slicing?
+
+Extracting parts of sequence.
+
+20. What is Pythonic code?
+
+Clean, readable, idiomatic Python.
+
+🟡 SECTION 2: INTERMEDIATE (21–50)
+21. What is multithreading vs multiprocessing?
+Threads share memory
+Processes don’t
+22. Why threading is limited in Python?
+
+Due to GIL
+
+23. When to use multiprocessing?
+
+CPU-bound tasks
+
+24. What is async programming?
+
+Non-blocking execution using async/await
+
+25. What is event loop?
+
+Manages async tasks execution
+
+26. What is context manager?
+
+Handles resource management (with)
+
+27. What is __enter__ and __exit__?
+
+Used in context managers
+
+28. What is pickling?
+
+Serializing objects to byte stream
+
+29. What is unpickling?
+
+Deserializing objects
+
+30. What is exception handling?
+
+Using try-except blocks
+
+31. Difference between raise and assert?
+raise → manual exception
+assert → debugging
+32. What is logging vs print?
+
+Logging is production-level tracking
+
+33. What is module vs package?
+Module: file
+Package: folder of modules
+34. What is virtual environment?
+
+Isolated Python environment
+
+35. What is pip?
+
+Package installer
+
+36. What is dependency management?
+
+Managing package versions
+
+37. What is monkey patching?
+
+Modifying code at runtime
+
+38. What is metaclass?
+
+Class of a class
+
+39. What is MRO?
+
+Method Resolution Order
+
+40. What is inheritance?
+
+Code reuse mechanism
+
+41. What is multiple inheritance?
+
+Class inherits from multiple parents
+
+42. What is polymorphism?
+
+Same interface, different behavior
+
+43. What is encapsulation?
+
+Data hiding
+
+44. What is abstraction?
+
+Hide implementation details
+
+45. What is static method?
+
+No access to instance/class
+
+46. What is class method?
+
+Uses cls
+
+47. What is __str__ vs __repr__?
+__str__: user-friendly
+__repr__: developer-friendly
+48. What is dataclass?
+
+Simplifies class creation
+
+49. What is namedtuple?
+
+Immutable object like tuple with names
+
+50. What is functools?
+
+Provides higher-order functions
+
+🔴 SECTION 3: ADVANCED (51–80)
+51. What is GIL impact in data engineering?
+
+Limits parallel CPU tasks
+
+52. How to bypass GIL?
+
+Use multiprocessing / external systems
+
+53. What is memory leak?
+
+Unused memory not released
+
+54. How to detect memory leaks?
+
+Using profiling tools
+
+55. What is caching?
+
+Storing results for reuse
+
+56. What is LRU cache?
+
+Least Recently Used cache
+
+57. What is heapq?
+
+Priority queue
+
+58. What is threading lock?
+
+Prevents race conditions
+
+59. What is race condition?
+
+Multiple threads accessing shared data
+
+60. What is deadlock?
+
+Threads waiting forever
+
+61. What is concurrent.futures?
+
+Thread/Process pool API
+
+62. What is asyncio?
+
+Async framework
+
+63. Difference between map and filter?
+map → transform
+filter → condition
+
+64. What is reduce?
+
+Aggregate function
+
+65. What is itertools?
+
+Efficient iteration tools
+
+66. What is generator vs iterator?
+
+Generator is a type of iterator
+
+67. What is yield vs return?
+yield → pause
+return → end
+68. What is coroutine?
+
+Async function
+
+69. What is thread-safe code?
+
+Safe under concurrency
+
+70. What is serialization?
+
+Convert object → storable format
+
+71. What is JSON vs Pickle?
+JSON → readable
+Pickle → Python-specific
+72. What is REST API?
+
+HTTP-based service
+
+73. What is API rate limiting?
+
+Limit number of requests
+
+74. What is retry logic?
+
+Re-executing failed operations
+
+75. What is exponential backoff?
+
+Retry delay increases exponentially
+
+76. What is idempotency?
+
+Same result on multiple runs
+
+77. What is config-driven code?
+
+Using config instead of hardcoding
+
+78. What is environment variable?
+
+External configuration
+
+79. What is logging levels?
+
+DEBUG, INFO, WARN, ERROR
+
+80. What is unit testing?
+
+Testing individual components
+
+🔥 SECTION 4: DATA ENGINEER SCENARIOS (81–100)
+81. How Python is used in data pipelines?
+
+ETL scripts, orchestration, API ingestion
+
+82. How to handle large files in Python?
+
+Chunk processing
+
+83. How to read large CSV efficiently?
+
+Use iterator or chunk size
+
+84. How to handle API failures?
+
+Retry + logging
+
+85. How to ensure idempotency?
+
+Use unique keys / MERGE logic
+
+86. How to schedule Python jobs?
+
+Airflow / cron
+
+87. How to handle schema changes?
+
+Dynamic schema handling
+
+88. How to optimize Python code?
+
+Avoid loops, use vectorization
+
+89. How to debug production issues?
+
+Logs + monitoring
+
+90. How to handle null values?
+
+Default values / filtering
+
+91. How to validate data?
+
+Schema + rules
+
+92. How to connect to database?
+
+Using connectors (psycopg2, pyodbc)
+
+93. How to write scalable Python?
+
+Modular + reusable
+
+94. What is batching?
+
+Processing data in chunks
+
+95. What is streaming?
+
+Continuous data processing
+
+96. What is checkpointing?
+
+Saving progress
+
+97. What is fault tolerance?
+
+System survives failure
+
+98. What is DAG in Python context?
+
+Task dependency graph
+
+99. How Python integrates with Databricks?
+
+PySpark, notebooks, jobs
+
+100. What makes Python code production-ready?
+Logging
+Error handling
+Retry
+Config-driven
+Modular

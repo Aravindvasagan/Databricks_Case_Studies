@@ -1,0 +1,1146 @@
+🔹 Simple Difference|
+| Feature | OneLake             | Microsoft Purview             |
+| ------- | ------------------- | ----------------------------- |
+| Purpose | Store data          | Manage & govern data          |
+| Role    | Data storage layer  | Data governance layer         |
+| Example | Save customer table | Track who used customer table |
+---------------------------------------------------
+🔹 Easy Analogy
+OneLake = 📦 Warehouse (stores everything)
+Purview = 🧭 Security + Map + Catalog (knows what is inside, who uses it)
+
+
+0:00 Introduction
+06:31 What is Microsoft Fabric
+20:23 Microsoft Fabric Tenant and Fabric Capacity
+If your company uses Fabric:
+All employees log in under one tenant
+All projects (data pipelines, lakehouses, reports) belong to that tenant
+🔹 Easy Analogy
+Tenant = Whole company setup
+Capacity = Power/machines that run the work
+🔹 One-line Interview Answer
+👉Tenant is the organizational boundary in Fabric, while Capacity is the compute resource that executes workloads inside that tenant.
+
+| Feature    | Tenant 🏢                | Capacity ⚡             |
+| ---------- | ------------------------ | ---------------------- |
+| What it is | Organization environment | Compute resources      |
+| Purpose    | Manage users & data      | Run workloads          |
+| Scope      | Entire company           | Assigned to workspaces |
+-----
+Fabric Capacity = 👉 Compute power (resources) used to run workloads
+
+Provides CPU + Memory for: Data pipelines, Notebooks, Power BI reports
+Comes in SKUs like F2, F4, F8… (more number = more power)-> stock keeping units
+You assign capacity to workspaces->workspaces is kind of resource group and are used as containers for microsoft fabric items
+Example:
+Small project → F2 capacity
+Heavy data processing  → F16 or higher
+
+workspaces
+----
+🔹 Easy Analogy
+Tenant = 🏢 Company
+Workspace = 📂 Project folder/team room
+Capacity = ⚡ Power to run things
+_________________________________________________________________________________________________________________________________________________________________
+30:23 How to create Microsoft Fabric Free Account
+39:32 Microsoft Fabric Demo
+Why don’t we create Fabric Capacity in Fabric portal?
+Because:
+👉 Capacity = Infrastructure (billing + compute)
+👉 Fabric portal = Usage (build and use data solutions)
+So, capacity must be created in Azure, not inside the Fabric UI.
+🔹 Where is Capacity created?
+
+Capacity is created in Microsoft Azure portal
+
+You choose:
+SKU (F2, F4, F8…)
+Region
+Pricing
+
+👉 This is where billing and compute resources are managed
+🔹 What is app.fabric.microsoft.com used for?
+
+Microsoft Fabric portal (app.fabric.microsoft.com) =
+👉 Place where you actually work
+
+You use it to:Create workspaces
+Build pipelines, lakehouses, notebooks
+Create reports (Power BI)
+Assign already-created capacity to workspaces
+🔹 Simple Flow
+Go to Azure → Create Fabric Capacity (compute power)
+Go to Fabric portal → Create Workspace
+Assign capacity to workspace
+Start building data solutions
+🔹 Easy Analogy
+Azure portal = ⚙️ Buy & set up machines (capacity)
+Fabric portal = 🧑‍💻 Use machines to do work
+
+🔹 Why this separation?
+Azure handles:
+Billing 💰
+Scaling ⚡
+Infrastructure 🖥️
+Fabric portal handles:
+Development 👨‍💻
+Collaboration 👥
+Data workflows 📊
+🔹 One-line Interview Answer
+
+👉
+Fabric Capacity is created in Azure because it handles infrastructure and billing, while app.fabric.microsoft.com is used to build and manage data workloads using that capacity.
+_________________________________________________________________________________________________________________________________________________________________
+| Feature     | ADF                           | Fabric Data Factory                |
+| ----------- | ----------------------------- | ---------------------------------- |
+| Platform    | Azure (separate service)      | Inside Fabric (all-in-one)         |
+| Setup       | Needs linked services, IR     | Simplified, mostly no IR needed    |
+| Storage     | External (ADLS, DB, etc.)     | Uses OneLake by default            |
+| Integration | Limited with BI tools         | Deep integration with Fabric tools |
+| Use Case    | Enterprise ETL across systems | Unified analytics + ETL            |
+🔹 When to use what?
+👉 Use ADF when:
+You have complex enterprise pipelines
+Need hybrid (on-prem + cloud) integration
+Already using Azure ecosystem heavily
+
+👉 Use Fabric Data Factory when:
+You are building inside Fabric
+Want simpler + unified experience
+Data is mostly in OneLake
+🔹 Important Point👉 Fabric Data Factory is not replacing ADF completely
+It is more like an evolved, simplified version for Fabric users
+
+🔹 One-line Interview Answer👉ADF is a standalone Azure ETL service, whereas Fabric Data Factory is an integrated data integration tool within Microsoft Fabric designed for a unified analytics experience.
+_________________________________________________________________________________________________________________________________________________________________
+
+1:08:09 Microsoft Fabric One Lake
+one lake top of adls gen2 handles semistuctured data(csv,json) and unstructured (pdf,img etc) , structured data\
+@all the  structured data is default comes with delta parqute file format
+ Microsoft Fabric One Lake
+one lake top of adls gen2 handles semistuctured data(csv,json) and unstructured (pdf,img etc) , structured data\
+@all the  structured data is default comes with delta parqute file format
+
+🔹 One-line Interview Answer👉
+One Copy in OneLake avoids logical duplication of data, while Azure redundancy (LRS/ZRS/GRS) ensures physical copies exist for durability and disaster recovery.
+_______________________________________________________()__________________________________________________________________________________________________________
+1:26:05 Delta Parquet File Format
+time traval data versions , transation llog, deltalog, Vacuum  -> VACUUM table RETAIN 7 HOURS -> After vacuum → you cannot time travel to old versions
+🔹 🔥 How Everything Works Together
+Data stored in Parquet files
+Changes recorded in _delta_log
+Each change creates a new version
+You can query old versions (time travel)
+Use vacuum to clean old files
+----
+2. Data Versions (Time Travel)
+👉 Delta automatically keeps versions of data
+Example:
+Version	Action
+v1	Initial load
+v2	Insert data
+v3	Update data
+
+👉 You can query old data: SELECT * FROM table VERSION AS OF 1 👉 This is called Time Travel
+---
+🔹 3. Delta Log (JSON + Checkpoints)
+Inside _delta_log:
+JSON files → each transaction
+Checkpoint (Parquet) → summary for faster reads
+👉 Helps:
+Track history
+Recover data
+Improve performance
+🔹 One-line Interview Answer👉
+Delta format stores data in Parquet files and maintains a transaction log (_delta_log) to support ACID operations, versioning (time travel), and cleanup using vacuum.
+_________________________________________________________________________________________________________________________________________________________________
+1:35:53 Fabric Data Warehouse vs Lakehouse vs KQL Database
+| Feature        | Lakehouse 🏞️          | Data Warehouse 🏢    | +
+-- ⚡              |
+| -------------- | ---------------------- | -------------------- | --------------------- |
+| Data Type      | All (structured + raw) | Structured only      | Streaming/log data    |
+| Query Language | SQL + Spark            | SQL                  | KQL                   |
+| Storage        | Files (Parquet)        | Internal optimized   | Columnar indexed      |
+| Use Case       | ETL, ML, big data      | BI, reporting        | Real-time analytics   |
+| Performance    | Medium (flexible)      | Fast (SQL optimized) | Very fast (real-time) |
+--------
+🔹 When to use what?
+👉 Use Lakehouse when:
+Data engineering / pipelines
+Raw + semi-structured data
+
+👉 Use Data Warehouse when:
+Business reporting
+Power BI dashboards
+
+👉 Use KQL DB when:
+Real-time dashboards
+Logs / IoT / telemetry
+🔹 How it works (simple flow) KQL
+Data ingestion
+Streaming or batch data comes in
+Stored in columnar format
+Storage
+Highly compressed + indexed
+Optimized for time-based queries
+Query execution
+Uses KQL (fast filtering, aggregation)
+Queries run on distributed engine
+Visualization
+Dashboards / Power BI
+
+🔹 One-line Interview Answer👉
+Lakehouse is for flexible big data processing, Data Warehouse is for high-performance SQL analytics, and KQL Database is for real-time log and streaming analytics.
+----
+Data Warehouse fabric
+🔸 Performance (Very Important)
+👉 Why it is fast?
+Columnar storage → reads only needed columns
+MPP → multiple nodes process data
+Optimized query engine
+
+👉 Result:
+⚡ Very fast for reporting and dashboards
+
+Why “Lake-Centric”?
+Lake = central storage
+Warehouse = performance layer on top
+
+👉 So:
+Storage = Lake
+Compute/Query = Warehouse
+_________________________________________________________________________________________________________________________________________________________________
+2:12:47 Data Ingestion in Microsoft Fabric
+Easy Example👉 Scenario: Source: On-prem SQL Server , Target: Fabric Lakehouse
+Steps:
+Install gateway
+Create pipeline in Data Factory
+Use gateway connection
+Load data into OneLake
+
+2. ETL Options in Fabric
+👉 ETL = Extract, Transform, Load; 🔸 Main ETL tools:
+| Tool                      | Type       | Best for                 |
+| ------------------------- | ---------- | ------------------------ |
+| Data Factory              | Low-code   | Pipelines, orchestration |
+| Dataflows Gen2            | No-code    | Business transformations |
+| Notebooks (Spark)         | Code-based | Complex logic, big data  |
+| SQL (Warehouse/Lakehouse) | SQL-based  | Transform using queries  |
+| using EventStream
+
+🔹 1. Data Ingestion in Fabric (Different Ways)
+👉 Data ingestion = bringing data into Fabric / OneLake
+
+✅ Common ways:
+1. Data Factory Pipelines 👉 Drag-and-drop ETL tool
+Copy data from:
+Databases (SQL Server, Oracle)
+Files (CSV, JSON)
+Supports scheduling
+
+2. Dataflows (Gen2)👉 Low-code transformation
+Power Query based
+Good for business users
+
+3. Notebooks (PySpark)👉 Code-based ingestion
+df = spark.read.csv("path")
+df.write.format("delta").save("path")
+Best for complex transformations
+
+4. Eventstreams (Real-time)👉 Streaming ingestion
+IoT / logs / live data
+
+5. Shortcuts (OneLake): 👉 No ingestion (virtual access)
+Access external data without copying
+
+6.mirroring 
+
+🔹 3. How Fabric Connects to On-Prem Sources
+👉 This is important 🔥
+Fabric uses:
+🔸 On-Premises Data Gateway
+How it works:
+Install gateway in your company network
+Connect it to Fabric
+Fabric securely accesses on-prem data
+---🔹 🔥 Shortcut vs Mirroring (Main Difference)
+| Feature       | Shortcuts 🔗            | Mirroring 🔄               |
+| ------------- | ----------------------- | -------------------------- |
+| Data Movement | ❌ No copy               | ✅ Data copied              |
+| Storage       | External                | Stored in OneLake          |
+| Performance   | Depends on source       | Fast (local data)          |
+| Sync          | Real-time (live access) | Near real-time replication |
+| Cost          | Low                     | Higher (storage + compute) |
+🔹 Easy Analogy
+Shortcut = 📎 Link to a file (file stays elsewhere)
+Mirroring = 📄 Copy of file (kept in your system)
+🔹 When to use what? 👉 Use Shortcuts when:
+You don’t want to copy data
+Data already exists in another system
+Cost saving is important
+👉 Use Mirroring when:
+Need high performance
+Need near real-time data inside Fabric
+Source system is frequently changing
+---
+🔹 1. What is Mirroring (quick recap)
+👉 Mirroring = continuous replication of source data into OneLake
+Near real-time sync
+No ETL code
+Uses CDC/log-based ingestion
+| Feature       | Mirroring 🔄 | Shortcut 🔗 | Pipeline ETL ⚙️ |
+| ------------- | ------------ | ----------- | --------------- |
+| Data copy     | Yes          | No          | Yes             |
+| Real-time     | Yes          | Yes (live)  | No (batch)      |
+| Code required | No           | No          | Yes             |
+| Performance   | High         | Medium      | High            |
+| Cost          | Medium       | Low         | High            |
+
+🔸 1. Database Mirroring (Most Common)
+👉 Sources:
+Azure SQL Database
+SQL Server
+Cosmos DB
+Snowflake
+How it works:
+Uses Change Data Capture (CDC) / transaction logs
+Tracks inserts, updates, deletes
+
+👉 Best for:
+OLTP systems
+Frequently changing data
+🔸 2. Open Mirroring
+👉 Flexible / extensible mirroring
+What it means:
+You can bring data from custom or unsupported sources
+Uses open formats (Delta/Parquet)
+Use:
+Non-native sources
+Custom ingestion frameworks
+Why:
+Flexibility when built-in connectors are not available
+🔸 3. Metadata Mirroring (Conceptual – Important) -> databrick to azure
+
+👉 Not a separate feature, but conceptually:
+
+Schema (tables, columns) is also replicated
+Keeps Fabric in sync with source structure
+Use:
+Schema evolution
+Data governance
+Why:
+Ensures queries don’t break when schema changes
+🔹 6. When to Use Which (Very Important)
+✅ Use Database Mirroring when:
+Need near real-time data
+Source is SQL / transactional
+Want zero ETL
+✅ Use Open Mirroring when:
+Source is not supported
+Need flexibility
+❌ Avoid Mirroring when:
+Data rarely changes
+Cost needs to be minimal
+👉 Use Shortcuts instead
+🔥 Final Interview Answer
+
+👉
+In Fabric, mirroring primarily includes database mirroring for structured sources, open mirroring for custom integrations, and metadata synchronization for schema alignment. Database mirroring provides the best performance using CDC, ensures security through Entra ID and encryption, and is ideal for near real-time analytics with moderate cost.
+_________________________________________________________________________________________________________________________________________________________________
+2:41:29 Fabric Data Factory👉
+In Microsoft Fabric Data Factory, activities include Copy Data, Dataflow, Notebook, Stored Procedure, Web, Lookup, Get Metadata, Set Variable, If Condition, ForEach, Until, Execute Pipeline, and Wait for building and orchestrating ETL workflows.
+_________________________________________________________________________________________________________________________________________________________________
+3:31:58 Real-Time Scenarios in Fabric Data Factory
+_________________________________________________________________________________________________________________________________________________________________
+3:35:43 Lookup Activity in Fabric Data Factory
+3:41:27 For Each Activity in Data Factory
+_________________________________________________________________________________________________________________________________________________________________
+3:53:33 Azure Data Lake Storage Gen2
+3:59:22 Ingest Data from Azure Blob to Fabric Lakehouse
+_________________________________________________________________________________________________________________________________________________________________
+4:11:33 Data Flow Gen 2 in Fabric
+| Feature     | Dataflow        | Databricks / Spark    |
+| ----------- | --------------- | --------------------- |
+| Type        | Low-code        | Code-based            |
+| Language    | Power Query (M) | PySpark / Scala / SQL |
+| Complexity  | Simple          | Complex               |
+| Data Volume | Small–Medium    | Medium–Very Large     |
+| Users       | Analysts        | Data Engineers        |
+| Performance | Moderate        | High                  |
+---
+| Feature     | Dataflow 🧑‍💼 | Fabric Notebook 👨‍💻 | Databricks 🚀            |
+| ----------- | -------------- | --------------------- | ------------------------ |
+| Type        | Low-code       | Code-based            | Advanced code platform   |
+| Engine      | Power Query    | Spark                 | Spark (advanced)         |
+| Data Size   | Small–Medium   | Medium–Large          | Very Large (PB)          |
+| Complexity  | Simple         | Medium–High           | Very High                |
+| Integration | Fabric only    | Fabric                | External (can integrate) |
+| Performance | Moderate       | High                  | Very High                |
+🔹 When to Use What (Simple)
+✅ Use Dataflow
+Quick ETL
+CSV / Excel cleaning
+Less coding
+✅ Use Fabric Notebooks (Spark)
+Standard data engineering
+Transform large datasets
+Build pipelines inside Fabric
+👉 Most common choice in Fabric projects
+
+✅ Use Databricks
+Massive data (enterprise scale)
+ML / AI heavy workloads
+Already using Databricks
+🔹 Which is BEST?
+
+👉 Depends on use case:
+Simple → Dataflow
+Most Fabric workloads → Fabric Notebook (Best balance)
+Enterprise scale / ML → Databricks
+🔹 Real Project Pattern (Very Important)
+Dataflow → Fabric Notebook → Warehouse / Lakehouse
+
+👉 Why:
+Dataflow = quick prep
+Notebook = heavy transformation
+
+🔹 When to Use Both Together
+👉 Very common in real projects:
+Dataflow → Initial cleaning (simple prep)
+Spark (Notebook) → Heavy transformations
+
+Example:
+Raw Data → Dataflow (clean) → Spark (transform) → Lakehouse
+
+🔹 Easy Analogy
+Dataflow = 🧑‍💼 Excel tool
+Notebook = 👨‍💻 Developer tool
+Databricks = 🏭 Industrial-scale factory
+
+_________________________________________________________________________________________________________________________________________________________________
+4:18:41 Data Transformations using Data Flow Gen 2 
+4:43:52 ETL Pipeline using Data Flow Gen 2
+4:50:31 Invoke Pipeline Fabric
+4:59:04 Send an email notification in Fabric on Pipeline Failure
+4:59:21 Triggers and Monitoring in Data Factory
+🔹 1. Triggers in Data Factory
+👉 Trigger = How and when your pipeline runs
+🔸 Types of Triggers
+1. Schedule Trigger👉 Runs at a fixed time
+Example:
+Daily at 2 AM
+Every hour
+2. Event-Based Trigger👉 Runs when an event happens
+Example:
+New file arrives in storage
+Blob created
+3. Manual Trigger👉 You run it manually
+Used for:
+Testing
+Debugging
+4. Tumbling Window Trigger (Advanced)👉 Runs for fixed time intervals with dependency tracking
+Example:
+Process data every 1 hour
+Ensures:
+No data loss
+No overlap
+
+🔹 2. Monitoring in Data Factory👉 Monitoring = Track pipeline execution
+🔸 What you can monitor
+✅ Pipeline Runs
+Success / Failed / Running
+✅ Activity Runs
+Each step status
+✅ Duration
+How long pipeline took
+✅ Errors
+Error message and logs
+🔸 Monitoring Tools
+Monitoring tab in Fabric
+Logs & metrics
+Alerts (optional setup)
+🔸 Example👉 Pipeline:Copy → Transform → Load
+
+Monitoring shows:
+Copy → Success
+Transform → Failed
+Load → Not started
+🔹 🔥 Why Triggers + Monitoring are Important
+Automate pipelines
+Detect failures quickly
+Ensure data reliability
+🔹 Easy Analogy
+Trigger = ⏰ Alarm (when to start)
+Monitoring = 📊 Dashboard (track progress)
+_________________________________________________________________________________________________________________________________________________________________
+5:12:58 Fabric Data Engineering
+🔹 1. Fabric Spark (Data Engineering)
+
+In Microsoft Fabric
+
+👉 Spark is fully integrated into the platform
+
+What you get:
+Notebooks (PySpark / SQL)
+Built-in Lakehouse on OneLake
+Tight integration with:
+Data Factory
+Power BI
+Warehouse
+How it works:
+No cluster management
+Uses Fabric Capacity
+Data stored in Delta (Parquet)
+🔹 2. Azure Synapse Spark
+
+In Azure Synapse Analytics
+
+👉 Spark is part of a separate analytics service
+
+What you get:
+Spark pools (you manage/configure)
+SQL pools + Spark (hybrid)
+Integration with ADLS
+How it works:
+You create/manage Spark pools
+More control over clusters
+🔹 4. When to Use What
+✅ Use Fabric Spark when:
+Building new solutions
+Want all-in-one platform
+Need less infrastructure management
+Tight Power BI integration
+✅ Use Synapse Spark when:
+Already using Synapse
+Need custom Spark tuning
+Complex enterprise workloads
+Hybrid architecture (SQL + Spark control)
+| Feature     | Fabric Spark 🟣           | Synapse Spark 🔵   |
+| ----------- | ------------------------- | ------------------ |
+| Setup       | No cluster management     | Need Spark pools   |
+| Integration | Fully integrated (Fabric) | Separate services  |
+| Storage     | OneLake                   | ADLS Gen2          |
+| Ease of use | Very simple               | Moderate           |
+| Flexibility | Medium                    | High               |
+| Cost model  | Capacity-based            | Pay per pool usage |
+
+🔹 5. Performance Insight
+
+👉 Both use Spark → similar core engine
+
+BUT:
+
+Fabric Spark → optimized + simplified
+Synapse Spark → more tuning → can optimize deeply
+🔹 6. Easy Analogy
+Fabric Spark = 🚗 Automatic car (easy, integrated)
+Synapse Spark = 🏎️ Manual car (more control, more setup)
+
+🔹 6. Real-World Architecture (Common)
+Databricks / Synapse → OneLake (via ingestion/shortcut) → Fabric (BI + analytics)
+-----
+🔹 1. Data Wrangler
+
+👉 UI-based data cleaning tool inside Fabric Notebooks
+
+No/low code
+Click-based transformations
+Generates Python (pandas) code automatically
+Use when:
+Quick data cleaning
+Exploring data
+You don’t want to write code
+🔹 2. Pandas
+
+👉 Python library for data manipulation
+
+Runs inside notebooks
+In-memory processing (single machine)
+import pandas as pd
+df = pd.read_csv("file.csv")
+Use when:
+Small to medium data (MB–few GB)
+Custom logic needed
+Quick analysis
+🔹 3. Databricks / Spark
+
+👉 Distributed big data processing engine
+
+Handles large-scale data (GB–TB–PB)
+Runs across clusters
+df = spark.read.csv("file.csv")
+Use when:
+Big data
+Complex transformations
+High performance needed
+
+| Feature     | Data Wrangler 🧑‍💼 | Pandas 🐼      | Databricks/Spark 🚀 |
+| ----------- | ------------------- | -------------- | ------------------- |
+| Type        | UI tool             | Python library | Distributed engine  |
+| Coding      | No/Low              | Yes            | Yes                 |
+| Data Size   | Small               | Small–Medium   | Large–Very Large    |
+| Execution   | Local               | Local (memory) | Distributed         |
+| Performance | Low                 | Medium         | Very High           |
+🔹 4. How they work together
+
+👉 Very common flow:
+
+Data Wrangler → Pandas → Spark
+Data Wrangler → quick cleaning
+Pandas → custom logic
+Spark → scale to big data
+🔹 5. When to Use What (Simple)
+Simple UI cleaning → Data Wrangler
+Python-based small data → Pandas
+Big data / production → Spark (Databricks/Fabric)
+_________________________________________________________________________________________________________________________________________________________________
+5:50:20 Microsoft Fabric Shortcuts
+6:03:53 Data Ingestion using PySpark
+6:15:51 Medallion Architecture Lakehouse
+_________________________________________________________________________________________________________________________________________________________________
+6:38:24 Data Transformation using PySpark
+6:57:20 Data Optimization in Fabric Lakehouse
+🔹 1. File Size Optimization (Small files problem)
+👉 Many tiny files = slow queries
+Fix: OPTIMIZE (compact files) -> OPTIMIZE sales_table -> just use in table level
+What it does:
+Merges small files → bigger files (~100–256 MB)
+Improves scan speed
+
+🔹 2. Data Skipping (Z-ORDER)
+
+👉 Helps Spark read only relevant data
+
+OPTIMIZE sales_table
+ZORDER BY (customer_id)
+What it does:
+Physically groups similar values together
+Speeds up filters like:
+SELECT * FROM sales_table WHERE customer_id = 101
+🔹 3. Partitioning
+
+👉 Split data into folders by column
+
+df.write.partitionBy("year").format("delta").save("path")
+Example:
+/year=2024/
+/year=2025/
+Benefit:
+Query reads only needed partitions
+Faster + cheaper
+🔹 4. Caching (Notebook level)
+
+👉 Store data in memory for reuse
+
+df.cache()
+df.count()
+Use:
+Repeated queries in notebooks
+🔹 5. Vacuum (Cleanup old data)
+VACUUM sales_table RETAIN 168 HOURS
+What it does:
+Removes old files
+Saves storage
+
+⚠️ After vacuum → old versions (time travel) removed
+
+🔹 6. Schema Optimization
+
+👉 Use correct data types
+
+Bad:
+
+string for everything ❌
+
+Good:
+
+int, date, decimal ✅
+Benefit:
+Faster queries
+Less storage
+🔹 7. Avoid Full Table Scans
+
+👉 Always filter data
+
+SELECT * FROM sales_table WHERE year = 2025
+
+Instead of:
+
+SELECT * FROM sales_table
+🔹 8. Notebook-Level Optimization
+🔸 Use efficient transformations
+
+Bad:
+
+for row in data: ❌
+
+Good:
+
+df.filter().groupBy() ✅
+🔸 Avoid unnecessary actions
+
+Bad:
+
+df.show()
+df.count()
+df.collect()
+
+👉 Each triggers computation
+
+🔸 Use broadcast joins (small table)
+from pyspark.sql.functions import broadcast
+df.join(broadcast(dim_df), "id")
+🔹 🔥 Simple End-to-End Example
+# Read data
+df = spark.read.format("delta").load("/lakehouse/sales")
+
+# Optimize transformations
+df_filtered = df.filter("year = 2025")
+
+# Cache for reuse
+df_filtered.cache()
+
+# Write optimized data
+df_filtered.write.partitionBy("year").format("delta").save("/lakehouse/output")
+🔹 Easy Analogy
+OPTIMIZE = 📦 Pack files neatly
+Z-ORDER = 📚 Arrange books by topic
+Partition = 🗂️ Separate folders
+Cache = ⚡ Keep in memory
+Vacuum = 🧹 Clean old files
+🔹 One-line Interview Answer
+
+👉
+Data optimization in Fabric Lakehouse involves techniques like file compaction (OPTIMIZE), partitioning, Z-ordering, caching, and vacuuming to improve query performance and reduce storage costs.
+_________________________________________________________________________________________________________________________________________________________________
+7:02:23 Spark Utilities in Fabric Lakehouse
+🔹 1. What are they?
+🔸 Spark Utilities in Fabric
+
+👉 mssparkutils in Microsoft Fabric
+
+Built-in utility library for Fabric notebooks
+Used for:
+File operations
+Notebook orchestration
+Secrets
+🔸 dbutils (Databricks)
+
+👉 dbutils in Databricks
+
+Utility library in Databricks notebooks
+Similar purpose but more mature & feature-rich
+🔹 2. Key Difference
+Feature	mssparkutils (Fabric) 🟣	dbutils (Databricks) 🟢
+Platform	Fabric	Databricks
+Setup	Auto available	Auto in Databricks
+Feature richness	Medium	Advanced
+Ecosystem	Fabric only	Databricks ecosystem
+🔹 3. Commands Comparison (Side-by-Side)
+🔸 1. File System Operations
+Fabric:
+mssparkutils.fs.ls("Files/")
+mssparkutils.fs.cp("Files/a.csv", "Files/b.csv")
+mssparkutils.fs.rm("Files/a.csv")
+Databricks:
+dbutils.fs.ls("/mnt/")
+dbutils.fs.cp("/mnt/a.csv", "/mnt/b.csv")
+dbutils.fs.rm("/mnt/a.csv")
+🔸 2. Notebook Execution
+Fabric:
+mssparkutils.notebook.run("child_notebook", 60)
+Databricks:
+dbutils.notebook.run("child_notebook", 60)
+🔸 3. Secrets Management
+Fabric:
+mssparkutils.credentials.getSecret("scope", "key")
+Databricks:
+dbutils.secrets.get(scope="scope", key="key")
+🔸 4. Environment Info
+Fabric:
+mssparkutils.env.getWorkspaceName()
+Databricks:
+dbutils.widgets.get("param")
+🔸 5. Widgets (Parameters)
+
+👉 Not directly available in Fabric like Databricks
+
+Databricks:
+dbutils.widgets.text("name", "value")
+
+👉 Fabric alternative:
+
+Use notebook parameters via pipeline
+🔹 4. Where to Use?
+✅ Use mssparkutils in Fabric when:
+Working in Fabric notebooks
+Managing OneLake files
+Running multi-notebook pipelines
+Accessing secrets securely
+✅ Use dbutils when:
+Working in Databricks
+Need advanced utilities (widgets, mounts, etc.)
+🔹 5. Real Example in Fabric
+# Read data
+df = spark.read.csv("Files/input.csv", header=True)
+
+# Copy file
+mssparkutils.fs.cp("Files/input.csv", "Files/backup.csv")
+
+# Run another notebook
+mssparkutils.notebook.run("transform_notebook", 120)
+🔹 6. Important Differences (Interview Trap)
+
+👉 Question: Can we use dbutils in Fabric?
+👉 Answer: ❌ No
+
+👉 Question: Are they same?
+👉 Answer:
+
+Similar purpose
+Different platforms
+🔹 7. Easy Analogy
+mssparkutils = 🧰 Fabric toolkit
+dbutils = 🧰 Databricks toolkit (more advanced)
+🔹 🔥 One-line Interview Answer👉
+mssparkutils in Fabric and dbutils in Databricks are utility libraries for file, notebook, and secret management, but mssparkutils is Fabric-specific with fewer features, while dbutils is more advanced and Databricks-specific.
+_________________________________________________________________________________________________________________________________________________________________
+7:11:11 Fabric Data Warehouse
+7:22:22 CTAS in Fabric Data Warehouse->create table as select
+7:31:04 Dimensional Data Modeling in Fabric
+7:39:23 Fact and Slowly Changing Dimensions
+7:55:30 Views in Fabric Data Warehouse
+7:58 Visual Query Editor in Fabric Warehouse
+_________________________________________________________________________________________________________________________________________________________________
+8:05:11 Fabric Data Science
+8:22:11 Data Wrangler in Fabric Data Science
+_________________________________________________________________________________________________________________________________________________________________
+8:30:31 Data Governance in Fabric (Lineage)
+🔹 What is Data Governance in Microsoft Fabric?
+
+👉 Data Governance = Managing, securing, tracking, and trusting data
+
+It helps answer:
+
+Where did the data come from?
+Who changed it?
+Is the data secure?
+Can we trust the report?
+🔹 Main Governance Components in Fabric
+Component	Purpose
+Lineage	Track data flow
+Catalog	Search and discover data
+Purview Integration	Governance & compliance
+Access Control	Security
+Sensitivity Labels	Protect confidential data
+Auditing	Track activity
+🔥 1. What is Lineage?
+
+👉 Lineage = End-to-end data flow tracking
+
+It shows:
+
+Source → Pipeline → Lakehouse → Warehouse → Power BI Report
+
+👉 You can visually track:
+
+Where data came from
+Which pipeline transformed it
+Which report uses it
+🔹 How Lineage Works Internally
+
+Fabric automatically captures metadata from:
+
+Pipelines
+Notebooks
+Dataflows
+Lakehouse
+Warehouse
+Power BI
+🔸 Example
+SQL Server
+   ↓
+Pipeline
+   ↓
+Lakehouse Table
+   ↓
+Power BI Dashboard
+
+Lineage graph shows all connections automatically.
+
+🔹 Why Lineage is Important
+✅ Impact Analysis
+
+👉 If table changes:
+
+Which reports break?
+Which pipelines affected?
+✅ Debugging
+
+👉 Find where bad data entered
+
+✅ Compliance
+
+👉 Track sensitive data flow
+
+✅ Trust
+
+👉 Business users know data origin
+
+🔹 Where to Use Lineage
+Scenario	Why
+Enterprise analytics	Track dependencies
+Production ETL	Debug pipelines
+Governance projects	Compliance
+Self-service BI	Data trust
+🔹 2. What is Microsoft Purview Integration?
+
+👉 Microsoft Purview = Governance service for Fabric
+
+Used for:
+
+Data catalog
+Data classification
+Lineage
+Compliance
+🔹 How Purview Works with Fabric
+
+Purview scans metadata from:
+
+OneLake
+Lakehouse
+Warehouse
+Power BI
+Pipelines
+🔹 3. Data Catalog
+
+👉 Search and discover datasets
+
+Example:
+
+Search: "customer"
+
+Returns:
+
+Tables
+Reports
+Pipelines
+🔹 4. Sensitivity Labels
+
+👉 Protect confidential data
+
+Examples:
+
+Public
+Confidential
+Highly Confidential
+Use:
+PII data
+Financial data
+HR data
+🔹 5. Access Control (Security)
+
+Uses:
+👉 Microsoft Entra ID
+
+Controls:
+
+Workspace access
+Table access
+Report access
+🔹 6. Auditing & Monitoring
+
+Tracks:
+
+Who accessed data
+Who modified pipelines
+Failed activities
+🔹 🔥 Real End-to-End Governance Flow
+On-Prem SQL
+   ↓
+Fabric Pipeline
+   ↓
+Lakehouse
+   ↓
+Warehouse
+   ↓
+Power BI
+
+Governance tracks:
+
+Data movement
+Ownership
+Security
+Usage
+🔹 Fabric Governance vs Traditional Systems
+Feature	Fabric
+Automatic lineage	✅
+Unified governance	✅
+Integrated with Power BI	✅
+OneLake metadata	✅
+🔹 Common Interview Questions
+👉 Why is lineage important?
+
+Answer:
+
+Impact analysis
+Debugging
+Compliance
+👉 Is lineage automatic in Fabric?
+
+👉 Mostly yes for Fabric-native components
+
+👉 Difference between governance and security?
+Security → Who can access
+Governance → Overall management + trust + tracking
+🔹 Easy Analogy
+Lineage = GPS tracking for data 🚚
+Purview = Security + monitoring office 🏢
+🔹 🔥 One-line Interview Answer
+
+👉
+Data governance in Fabric ensures data security, trust, compliance, and traceability, while lineage automatically tracks end-to-end data flow across pipelines, Lakehouse, Warehouse, and Power BI for impact analysis and auditing
+----------------what is semitic model and endorsement in fabric
+🔹 1. What is Semantic Model in Microsoft Fabric?
+👉 A Semantic Model is a business-friendly layer on top of data used for reporting and analytics.
+Previously called:
+👉 Power BI Dataset
+
+🔹 Why do we need Semantic Model?
+Raw database tables are hard for business users.
+Example raw table:
+cust_id | ord_amt | txn_dt
+Business users prefer:
+Customer Name | Sales Amount | Order Date
+👉 Semantic model makes data:
+
+
+Easy to understand
+
+
+Reusable
+
+
+Optimized for reporting
+
+
+
+🔹 What Semantic Model Contains
+ComponentPurposeTablesBusiness dataRelationshipsConnect tablesMeasuresCalculations (SUM, AVG)HierarchiesDrill-downKPIsBusiness metrics
+
+🔹 Example
+Sales Table
+customer_idamountdate
+Measure:
+Total Sales = SUM(Sales[amount])
+👉 Business users use:
+
+
+Total Sales
+
+
+Monthly Sales
+
+
+Profit KPI
+
+
+without writing SQL.
+
+🔹 How it Works
+Lakehouse / Warehouse        ↓Semantic Model        ↓Power BI Reports
+
+🔹 When to Use Semantic Model
+✅ Reporting
+✅ Self-service BI
+✅ Business dashboards
+✅ Centralized metrics
+
+🔹 Benefits
+
+
+Reusable calculations
+
+
+Faster reporting
+
+
+Security control
+
+
+Business-friendly naming
+
+
+
+🔹 2. What is Endorsement in Fabric?
+👉 Endorsement = Trust label for data items
+Used to tell users:
+👉 “This dataset/report is trusted and approved.”
+
+🔹 Types of Endorsement
+TypeMeaningPromotedRecommendedCertifiedOfficially approved
+
+🔹 1. Promoted
+👉 Created by:
+
+
+Analysts
+
+
+Data teams
+
+
+Means:
+✅ “Good dataset to use”
+
+🔹 2. Certified
+👉 Approved by:
+
+
+Governance/admin teams
+
+
+Means:
+✅ Official trusted enterprise data
+
+🔹 Example
+Sales Dashboard → Certified
+Business users know:
+👉 Data is reliable
+
+🔹 Why Endorsement is Important
+✅ Avoid duplicate reports
+Everyone uses same trusted dataset
+
+✅ Improve trust
+Users know which reports are official
+
+✅ Governance
+Supports enterprise standards
+
+🔹 Real Flow
+Lakehouse   ↓Semantic Model   ↓Certified Dataset   ↓Power BI Reports
+
+🔹 Semantic Model vs Endorsement
+FeatureSemantic ModelEndorsementPurposeBusiness data layerTrust labelUsed forReporting & metricsGovernanceContains logicYesNoBusiness usageAnalyticsData trust
+
+🔹 Easy Analogy
+
+
+Semantic Model = 📘 Business dictionary for data
+
+
+Endorsement = ✅ Verified/trusted stamp
+
+
+
+🔹 🔥 One-line Interview Answer
+👉
+A semantic model in Fabric provides a business-friendly analytical layer with relationships and measures for reporting, while endorsement marks datasets or reports as promoted or certified to indicate trusted enterprise data.
+_________________________________________________________________________________________________________________________________________________________________
+8:46:16 Fabric Deployment Pipeline - CI CD
+_________________________________________________________________________________________________________________________________________________________________
+8:59:26 Direct Lake vs Direct Query vs Import Mode in Fabric
+_________________________________________________________________________________________________________________________________________________________________
