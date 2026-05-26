@@ -1,0 +1,444 @@
+?In Databricks (PySpark), there are several ways to rename columns depending on 
+whether you want to change one, a few, or all of them
+1. Rename a Single Column (withColumnRenamed
+df = df.withColumnRenamed("old_name", "new_name").withColumnRenamed("old_name", "new_name")
+2. Rename Multiple Columns at Once (withColumnsRenamed)
+df = df.withColumnsRenamed({"old_id": "ID", "old_name": "Product_Name"})
+3. Rename All Columns by Passing a List (toDF)
+new_names = ["ID", "Item", "Group", "Cost", "Quantity", "Salt"]
+df = df.toDF(*new_names)
+4. Using select with Aliases (alias)
+from pyspark.sql.functions import col
+
+df = df.select(
+    col("ID").alias("Product_ID"),
+    col("Price").alias("Unit_Price")
+)
+5. Using List Comprehension (For Bulk Changes)
+# Example: Add 'col_' prefix to every column name
+df = df.select([col(c).alias(f"col_{c}") for c in df.columns])
+
+# Example: Make all names lowercase
+df = df.select([col(c).alias(c.lower()) for c in df.columns])
+
+6. Using SQL (Inside Databricks)
+df.createOrReplaceTempView("temp_table")
+df_renamed = spark.sql("SELECT ID AS Product_ID, Price AS Cost FROM temp_table")
+7.df = df.selectExpr(particualrcolumn as name, year as main, *df1.columns[1:])-> all the columns with renamed column
+8.df = df.select(col(particualrcolumn).alias(name), *df1.columns[1:])-> all the columns with renamed column
+
+python,sql, databricks, airflow, adf -> development
+adf, databricks, azure devops IAC, fabric, delta table, delta live table, onelake, lakehouse
+
+----------------------------
+ five primary ways to create a DataFrame depending on where your data is coming from
+1.From Raw Data (Manual Creation)
+data = [(1, "Laptop"), (2, "Mouse")]
+cols = ["ID", "Product"]
+
+df = spark.createDataFrame(data, schema=cols)
+
+2. From Files (CSV, JSON, Parquet, etc.)
+df = (spark.read
+  .format("csv")
+  .option("header", "true")
+  .option("inferSchema", "true")
+  .load("/mnt/raw_data/sales.csv"))
+
+3. From a Delta Table or SQL Table 
+# Using the table name
+df = spark.table("default.product_inventory")
+
+# Using a SQL query
+df = spark.sql("SELECT * FROM default.product_inventory WHERE Stock > 0")
+
+4. From a Pandas DataFrame
+import pandas as pd
+pdf = pd.DataFrame({'id': [1, 2], 'val': ['A', 'B']})
+
+# Convert Pandas to Spark
+df = spark.createDataFrame(pdf)
+
+
+5. From External Databases (JDBC)
+To pull data directly from SQL Server, MySQL, Oracle, or Snowflake.
+df = (spark.read
+  .format("jdbc")
+  .option("url", "jdbc:mysql://<hostname>:<port>/<db>")
+  .option("dbtable", "orders")
+  .option("user", "<username>")
+  .option("password", "<password>")
+  .load())
+
+------------------Create schema in Databricks-------------------------------------------------------------------
+the main ways to create schema in Databricks (PySpark), using your product and order examples.
+1. Define schema using StructType (most common & best practice)
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DoubleType
+
+product_schema = StructType([
+    StructField("product_id", IntegerType(), True),
+    StructField("product_name", StringType(), True),
+    StructField("category", StringType(), True),
+    StructField("price", DoubleType(), True)
+])
+product_df = spark.read.format("csv") \
+    .option("header", "false") \
+    .schema(product_schema) \
+    .load("dbfs:/FileStore/product.csv")
+2. Define schema using DDL string (short & clean)
+product_schema = "product_id INT, product_name STRING, category STRING, price DOUBLE"
+
+
+product_df = spark.read.format("csv") \
+    .option("header", "false") \
+    .schema(product_schema) \
+    .load("dbfs:/FileStore/product.csv")
+	
+3. Read first, then rename columns -> issue is all column defult with string datatypes cant chage while reading
+df = spark.read.format("csv") \
+    .option("header", "false") \
+    .load("dbfs:/FileStore/product.csv")
+	
+product_df = df.toDF("product_id", "product_name", "category", "price")
+
+4. Infer schema automatically (not recommended for tests)
+df = spark.read.format("csv") \
+    .option("header", "false") \
+    .option("inferSchema", "true") \
+    .load("dbfs:/FileStore/product.csv")
+Problem:
+
+Can misinterpret nulls
+Inconsistent in real pipelines
+
+
+5. Create schema manually after load (casting)
+from pyspark.sql.functions import col
+
+df = spark.read.format("csv").option("header", "false").load("dbfs:/FileStore/product.csv")
+
+product_df = df.select(
+    col("_c0").cast("int").alias("product_id"),
+    col("_c1").alias("product_name"),
+    col("_c2").alias("category"),
+    col("_c3").cast("double").alias("price")
+)
+
+-------------------------------------------------------------------------------------
+
+1. Core Join Strategies
+These define how Spark moves and merges data across the cluster. 
+
+Broadcast Hash Join (BHJ):
+How it works: The smaller table is copied entirely to every executor node.
+Performance: The fastest join as it avoids an expensive "shuffle".
+Recommendation: Best for small tables (default threshold is 10MB, but often tuned up to 200MB-500MB).
+Use Case: Joining a massive sales_fact table with a small product_dimension table.
+Broadcast Hash Join (BHJ)
+The Concept: Spark sends a copy of the small table to every worker node so the large table doesn't have to move.
+Performance: Fastest; zero shuffling of the large dataset.
+Real-time Use Case: Mapping country codes in a massive transaction table.
+python
+from pyspark.sql.functions import broadcast
+
+# Large Table (Fact): sales_df (1 Billion rows)
+# Small Table (Dimension): countries_df (200 rows)
+# Optimization: Force broadcast of the tiny table
+result = sales_df.join(broadcast(countries_df), "country_id")
+-----
+Sort-Merge Join (SMJ): default
+How it works: Both datasets are shuffled by the join key, sorted locally, and then merged.
+Performance: Robust for very large datasets as it can spill to disk if memory is low.
+Recommendation: Default for large-to-large equi-joins.
+Use Case: Joining two massive tables like web_logs and user_transactions.
+------
+6. Dealing with Data Skew (The "Salt" Optimization)
+The Concept: If one city_id (like 'London') has 90% of the data, that worker node will be slow. We "salt" the key by adding a random number to break the big chunk into smaller ones.
+Real-time Use Case: Processing high-traffic events where a few keys dominate.
+python
+# 1. Add a random salt to the left table
+from pyspark.sql.functions import rand, concat, lit
+skewed_df = df_left.withColumn("salt", (rand() * 10).cast("int"))
+skewed_df = skewed_df.withColumn("salted_key", concat("city_id", lit("_"), "salt"))
+
+# 2. Explode the right table to match all possible salt values
+# (This ensures the join still finds the match)
+
+Pro-Tip: If you see one task in your Spark UI taking 10x longer than others, you have Data Skew. Use the Skew Join Hint in Databricks:
+python
+# Databricks specific hint for AQE
+result = df1.hint("skew", "city_id").join(df2, "city_id")
+------
+Shuffle Hash Join (SHJ):
+How it works: Shuffles both datasets but only builds a hash table for the smaller side in each partition.
+Performance: Faster than SMJ because it skips the sorting phase, but riskier as it may cause Out-Of-Memory (OOM) errors if one partition is too big.
+Use Case: Medium-sized tables where data is evenly distributed and can fit into memory.
+
+Broadcast Nested Loop Join (BNLJ):
+How it works: Broadcasts one table and uses a nested loop to evaluate conditions.
+Performance: Very slow; typically a fallback.
+Use Case: Mandatory for Non-Equi Joins (joining on >, <, or !=) when one table is small. 
+
+2. Filtering Join Types (Semi & Anti) faster than inner and Performance: Extremely efficient for "Not In" or "Except" logic.
+These are used for filtering rather than data enrichment. 
+Join Type 	Result	Real-Time Use Case
+Left Semi	Rows in the left table that have a match in the right.	Filtering: "Show me only customers who made a purchase today."
+Left Anti	Rows in the left table that have no match in the right.	Exception Finding: "Find customers who haven't updated their profiles in 6 months."
+3. Performance Optimization Recommendations
+To ensure your joins run efficiently, follow these best practices:
+Enable Adaptive Query Execution (AQE): Databricks recommends keeping AQE enabled. It can dynamically switch a slow Sort-Merge Join to a fast Broadcast Join at runtime if it detects the data is smaller than expected.
+Manually Broadcast: If Spark doesn't automatically broadcast a table you know is small, force it using a hint: df1.join(broadcast(df2), "id").
+Handle Data Skew: Skewed data (where one key has millions of rows and others have few) causes specific nodes to lag. Use Databricks' Skew Join Optimization or manually "salt" the keys to distribute the load.
+Analyze Your Tables: Regularly run ANALYZE TABLE table_name COMPUTE STATISTICS to help the Cost-Based Optimizer (CBO) make the right join strategy choice.
+Use Photon Engine: On Databricks, enabling the Photon engine provides vectorized execution, which significantly accelerates join operations by default.
+--------------------------------------------------------
+
+remove the dublicate in diffrent ways in dataframe
+
+1.dropDuplicates() (Most Common)
+This is the standard programmatic way to handle duplicates.
+Whole Row: Removes rows where every single column is identical.
+Specific Columns: Only looks at the columns you list (useful for keeping only one entry per ID).
+df = df.dropDuplicates()
+df= df.dropDuplicates(["id"])
+
+2. distinct()
+This is simpler but less flexible. It always compares the entire row. It is essentially a shorthand for dropDuplicates() without arguments.
+df = df.distinct()
+
+3. Window Functions (row_number)
+Use this when you have duplicates but want to choose which one to keep (e.g., keep the "latest" record based on a timestamp).
+Wn = df.withColumn('rn',row_number().over(Window.partitionBy("customers_id").orderBy(desc("timestamp"))))
+df = wn.filter('rn==1').drop(rn)
+
+4. Spark SQL DISTINCT or GROUP BY
+If you prefer writing SQL logic, you can use the GROUP BY approach which gives you control over aggregating the other columns.
+-- Method A: Simple distinct
+SELECT DISTINCT * FROM my_table
+
+-- Method B: Group by with aggregation (e.g., get the max price for each product)
+SELECT product_id, MAX(price), MIN(date)
+FROM my_table
+GROUP BY product_id
+
+Performance Tip: dropDuplicates vs Window
+Use dropDuplicates for simple cleanup. It is highly optimized in Spark.
+Use Window only if you need to pick a specific record (like the most recent one). It is more "expensive" because it requires more complex sorting.
+------------------------------------------------------
+find the dublicate rows
+1. The Group & Count Method (Easiest)
+from pyspark.sql.functions import col
+# Group by the columns that should be unique (e.g., 'user_id')
+duplicate_counts = df.groupBy("user_id", "email") \
+                     .count() \
+                     .filter(col("count") > 1) \
+                     .orderBy(col("count").desc())
+
+duplicate_counts.show()
+
+
+dublicate row in(a,b)-> eg: in sql
+select a, b,max(c) , count(*) from tb groupBy a,b  having count(*)>1
+
+2. The Total Count Difference (Quickest)
+total_rows = df.count()
+unique_rows = df.distinct().count()
+print(f"Total Duplicates: {total_rows - unique_rows}")
+
+3. Displaying the Actual Duplicate Rows
+from pyspark.sql.window import Window
+from pyspark.sql.functions import count
+
+# Define the "uniqueness" window
+windowSpec = Window.partitionBy("user_id")
+
+# Add a column that shows how many times that user_id appears
+df_with_counts = df.wit]/Column("occurrence_count", count("*").over(windowSpec))
+
+# Filter to see only the rows that are duplicated
+duplicates_only = df_with_counts.filter("occurrence_count > 1").orderBy("user_id")
+display(duplicates_only)
+
+when to use which:
+Method 1: Best for a summary report (e.g., "Which user IDs are causing issues?").
+Method 2: Best for a quick sanity check during a data pipeline.
+Method 3: Best for debugging (seeing the actual data side-by-side to understand why it's duplicated).
+
+-----------------------------------------------------------
+
+a b c
+1 1 0
+0 1 1
+1 1 0
+0 0 0
+1 1 1
+
+select a, b, c, count(*)
+from tb
+groupBy(a,b,c) -> (a,b) -> (a)
+
+select a,max(b),min(c) count(a)
+from tb groupBy a
+
+
+output:  max(b), minc(c),count(*)
+(a) -> 1 1 0 3 
+       0 1 0 2
+(a,b)-> select a, b,max(c) , count(*) from tb groupBy a,b 
+a b c count
+1  1 1  3
+0  1 1  1
+0  0 1  1 
+a b c count -select a,b,c , count(*) from tb groupBy a,b,c
+1 1 0   2
+0 1 1   1
+0 0 0   1
+1 1 1  1
+0  0 0  4
+ ---------------------------
+ -------------dataframs 
+ Common Transformations (Lazy)
+Transformations create a new DataFrame from an existing one.  
+select(): Projects a set of expressions (e.g., df.select("name", "age")).
+filter() / where(): Filters rows based on a condition.  
+withColumn(): Adds a new column or replaces an existing one.  
+withColumnRenamed(): Renames an existing column. ->df.groupBy(name).sum(sal).withColumnRenamed(sum(sal)), total_sum) 
+				more than one column in groub by using agg()->df.groupBy(name).agg(sum(sal),count(name).alias(cn_name)).withColumnRenamed(sum(sal)), total_sum) 
+drop(): Removes specific columns.
+groupBy(): Groups the DataFrame using the specified columns for aggregation.  
+join(): Joins with another DataFrame (e.g., inner, left, outer).
+orderBy() / sort(): Returns a new DataFrame sorted by the specified columns.  
+distinct() / dropDuplicates(): Removes duplicate rows.
+ 
+ 0---- actions----on dataframe----
+ Actions trigger the computation and return results.  
+ show(n): Displays the first $n$ rows in a tabular format (default is 20).
+ display(): A Databricks-specific function that creates a rich, interactive table and chart view.
+ count(): Returns the number of rows.  
+ collect(): Returns all records to the driver as a List of Rows. Warning: High risk of OutOfMemory errors for large datasets.
+ take(n): Returns the first $n$ rows.  
+ first(): Returns the very first row.  write: Saves the DataFrame to a data source (e.g., df.write.format("delta").save(path)).
+--------- rdd
+Narrow Transformations
+map(func): Passes each element through a function.  
+filter(func): Returns a new RDD with elements that satisfy a condition.  
+flatMap(func): Similar to map, but each input item can be mapped to 0 or more output items (flattens the result).  
+union(dataset): Combines two RDDs.
+
+Wide Transformations
+groupByKey(): Groups values for each key in the dataset.  
+reduceByKey(func): Merges the values for each key using an associative reduce function. (More efficient than groupByKey because it combines data before shuffling).  
+join(otherDataset): Joins two RDDs based on a common key.  
+distinct(): Returns a new RDD containing only unique elements.
+0------RDD Actions (Eager)--------
+Action,Description
+collect(),Returns all elements of the RDD as an array to the driver. Caution: Can crash the driver if the data is too large.
+count(),Returns the number of elements in the RDD.
+first(),Returns the first element of the RDD.
+take(n),Returns an array with the first n elements.
+reduce(func),"Aggregates the elements of the dataset using a function (e.g., a sum)."
+saveAsTextFile(path),Writes the elements of the dataset to a text file in the specified directory.
+
+-------------------------***********________________________-------
+?map vs mapPartition vs mapPartitionWithIndex
+map will performing it in the row by row levels
+map partition partition level like iterable inside the partition.
+mapPartitionWithIndex - can return parition index and can identifi the lenthe of data inside the parition
+
+?map vs flatmap in rdd
+map is one to one tranformation\ and same number of element will return as input and output, length of input RDD and output rDD is same
+flatmap is one to many and flatern the multple value in single list
+
+?groupBy() vs orderBy() vs sort() vs sortby() in databricks ?
+Operation,Level,Logic,Key Characteristic
+----------------------------------------
+groupBy,	Both,		Wide,"Moves same keys to same partitions for math (Sum, Avg)."
+orderBy,DataFrame,		Wide,Provides a Global Sort across all partitions.
+sort,	DataFrame,		Wide,Identical to orderBy.
+sortBy,		RDD,		Wide,Custom sort logic via a lambda function.
+sortWithinPartitions,Both,Narrow,"Sorts data only inside each partition. Much faster, but not globally sorted."
+
+
+orderBy() / sort():  in dataframe
+groupByKey() vs reduceByKey(func) in rdd
+If the interviewer asks about groupBy in RDDs, mention that reduceByKey is almost always better. groupByKey shuffles all data first, which can cause "Out of Memory" errors. reduceByKey combines data locally on each executor before shuffling, which is much more efficient.
+
+
+*
+
+4. Summary Table
+Feature	map	flatMap
+Input to Output	1 to 1	1 to Many (or 0)
+Structure	Preserves original structure	"Flattens" or levels the structure
+Result Type	Collection of Collections	Single flat Collection
+
+?Wordcount from the file ->total words and particular word into count, all words in uniq counts.
+
+# Sample data simulating lines from a file
+data = ["apple banana apple", "orange apple banana", "banana grape"]
+
+# Create RDD
+rdd = sc.parallelize(data)
+
+# Flatten lines into words
+words_rdd = rdd.flatMap(lambda line: line.split(" "))
+
+# 1. Total Word Count
+total_words = words_rdd.count()
+
+# 2. Particular Word Count (e.g., 'apple')
+target_word = "apple"
+particular_count = words_rdd.filter(lambda word: word == target_word).count()
+
+# 3. All Unique Word Counts (Classic WordCount)
+word_counts_rdd = words_rdd.map(lambda word: (word, 1)) \
+                           .reduceByKey(lambda a, b: a + b)
+
+# Collect results to driver
+unique_counts = word_counts_rdd.collect()
+
+print(f"Total Words: {total_words}")
+print(f"Count of '{target_word}': {particular_count}")
+print(f"Unique Word Counts: {unique_counts}")
+
+
+?explode functions
+
+Important Note: In Databricks, if your list is empty [] or null, explode() will remove that row entirely. If you want to keep the row with a null value, use explode_outer() instead.
+Would you like to see how to use posexplode() to keep the original index position of the items in the list?
+
+
+Comparison Summary
+Feature	explode()	explode_outer()	posexplode()
+Empty/Null Lists	Removes the row	Keeps row (shows null)	Removes the row
+Index Position		Not captured	Not captured	Captured (0, 1, 2...)
+Best Use Case		Standard flattening	Cleaning data without loss	Tracking order/ranking
+Note: Just like explode, there is also a posexplode_outer() in PySpark if you want the position and want to keep null rows.
+
+
+load 100 table in incrementaly using cdc
+in dbutils, databricks, python, adf
+in details line by line
+
+load 100 files in incrementaly using cdc
+in dbutils, databricks, python, adf
+in details line by line 
+
+batch ingestion 
+cdc injection
+streem ingestion
+
+
+
+
+hcl-fabric interview.
+requirment-> fabric,workn on data pipeline for analytical model, sql complex queres, optimized existin pipeline and  data migration pipeline to the lagasy system to move the morden cloud.
+
+1. what is this in your compatable, have you done so far
+2. 
+
+
+
+
+
+
